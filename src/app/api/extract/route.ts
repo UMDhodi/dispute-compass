@@ -23,15 +23,57 @@ export async function POST(request: NextRequest) {
     const fileName = file.name.toLowerCase();
 
     if (fileName.endsWith(".pdf")) {
-      // Use require() to avoid ESM/CJS interop issues with pdf-parse
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string }>;
-      const data = await pdfParse(buffer);
-      text = data.text;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const pdfModule = require("pdf-parse");
+        if (pdfModule?.PDFParse) {
+          // pdf-parse v2+
+          const parser = new pdfModule.PDFParse({ data: buffer });
+          try {
+            const data = await parser.getText();
+            text = data.text || "";
+          } finally {
+            await parser.destroy().catch(() => {});
+          }
+        } else if (typeof pdfModule === "function") {
+          // pdf-parse v1
+          const data = await pdfModule(buffer);
+          text = data.text || "";
+        } else if (typeof pdfModule?.default === "function") {
+          const data = await pdfModule.default(buffer);
+          text = data.text || "";
+        } else {
+          throw new Error("Compatible PDF parser interface not found");
+        }
+      } catch (pdfErr) {
+        console.error("[/api/extract] PDF parsing error:", pdfErr);
+        const msg = pdfErr instanceof Error ? pdfErr.message : "Failed to parse PDF";
+        return NextResponse.json({ error: `Could not extract PDF text: ${msg}` }, { status: 422 });
+      }
+
+      if (!text.trim()) {
+        return NextResponse.json(
+          { error: "This PDF contains no readable text. It may be scanned or image-only." },
+          { status: 422 }
+        );
+      }
     } else if (fileName.endsWith(".docx")) {
-      const mammoth = await import("mammoth");
-      const result = await mammoth.extractRawText({ buffer });
-      text = result.value;
+      try {
+        const mammoth = await import("mammoth");
+        const result = await mammoth.extractRawText({ buffer });
+        text = result.value || "";
+      } catch (docxErr) {
+        console.error("[/api/extract] DOCX parsing error:", docxErr);
+        const msg = docxErr instanceof Error ? docxErr.message : "Failed to parse DOCX";
+        return NextResponse.json({ error: `Could not extract DOCX text: ${msg}` }, { status: 422 });
+      }
+
+      if (!text.trim()) {
+        return NextResponse.json(
+          { error: "The DOCX document is empty." },
+          { status: 422 }
+        );
+      }
     } else {
       // Plain text fallback
       text = buffer.toString("utf-8");
@@ -43,6 +85,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ text, fileName: file.name, charCount: text.length });
   } catch (err) {
     console.error("[/api/extract] Error:", err);
-    return NextResponse.json({ error: "Failed to extract text from file" }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Failed to extract text from file";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

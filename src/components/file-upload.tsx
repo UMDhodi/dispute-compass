@@ -45,7 +45,10 @@ export function FileUpload({
           const formData = new FormData();
           formData.append("file", file);
           const res = await fetch("/api/extract", { method: "POST", body: formData });
-          if (!res.ok) throw new Error("Failed to extract PDF text");
+          if (!res.ok) {
+            const errData = await res.json().catch(() => null) as { error?: string } | null;
+            throw new Error(errData?.error || "Failed to extract PDF text");
+          }
           const data = await res.json() as { text: string };
           text = data.text;
         } else if (
@@ -55,7 +58,10 @@ export function FileUpload({
           const formData = new FormData();
           formData.append("file", file);
           const res = await fetch("/api/extract", { method: "POST", body: formData });
-          if (!res.ok) throw new Error("Failed to extract DOCX text");
+          if (!res.ok) {
+            const errData = await res.json().catch(() => null) as { error?: string } | null;
+            throw new Error(errData?.error || "Failed to extract DOCX text");
+          }
           const data = await res.json() as { text: string };
           text = data.text;
         } else {
