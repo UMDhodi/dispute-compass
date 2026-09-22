@@ -5,16 +5,16 @@ export const dynamic = "force-dynamic";
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
   // Use pdfjs-dist legacy build — runs in Node.js without browser globals like DOMMatrix.
-  // Dynamic import handles the ESM module format.
   const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-  // Disable the web worker entirely for server-side use.
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+  // Resolve the worker file path from node_modules and convert to a file:// URL.
+  // pdfjs-dist v6 requires a valid workerSrc even for server-side (fake worker) mode.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const workerPath: string = require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `file:///${workerPath.replace(/\\/g, "/")}`;
 
   const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(buffer),
-    // @ts-expect-error — disableWorker is valid but missing from older type stubs
-    disableWorker: true,
     useSystemFonts: true,
   });
   const pdf = await loadingTask.promise;
