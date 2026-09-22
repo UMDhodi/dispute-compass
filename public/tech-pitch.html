@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DisputeCompass — Tech Stack Pitch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:      #0E9384;
+      --brand-glow: rgba(14,147,132,0.25);
+      --bg:         #0a0f0e;
+      --surface:    rgba(255,255,255,0.04);
+      --surface-hov:rgba(255,255,255,0.08);
+      --border:     rgba(255,255,255,0.08);
+      --text:       #e8f0ef;
+      --muted:      #7a9490;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 10% 10%, rgba(14,147,132,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 90% 80%, rgba(14,147,132,0.08) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* HERO */
+    .hero {
+      padding: 72px 0 56px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(14,147,132,0.15);
+      border: 1px solid rgba(14,147,132,0.35);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--brand);
+      margin-bottom: 28px;
+    }
+
+    .hero-badge .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--brand);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    .hero h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: clamp(2.2rem, 5vw, 3.6rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 .accent {
+      background: linear-gradient(135deg, #0E9384 0%, #4ade80 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* STATS BAR */
+    .stats-bar {
+      display: flex;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .stat {
+      flex: 1;
+      padding: 28px 24px;
+      text-align: center;
+      background: var(--surface);
+      transition: background 0.2s;
+    }
+    .stat:hover { background: var(--surface-hov); }
+    .stat + .stat { border-left: 1px solid var(--border); }
+    .stat-num {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--brand);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 500;
+    }
+
+    /* CATEGORY HEADER */
+    .cat-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 52px 0 20px;
+    }
+    .cat-icon {
+      font-size: 1.3rem;
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .cat-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .cat-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, var(--border), transparent);
+    }
+
+    /* TABLE */
+    .tech-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 10px;
+    }
+
+    .tech-table thead th {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0 20px 8px;
+      text-align: left;
+    }
+
+    .tech-table thead th:first-child { width: 30%; }
+
+    .tech-row {
+      background: var(--surface);
+      border-radius: 12px;
+      transition: background 0.2s, transform 0.2s;
+      cursor: default;
+    }
+    .tech-row:hover {
+      background: var(--surface-hov);
+      transform: translateX(4px);
+    }
+
+    .tech-row td {
+      padding: 18px 20px;
+      vertical-align: top;
+    }
+
+    .tech-row td:first-child {
+      border-radius: 12px 0 0 12px;
+      border-left: 1px solid var(--border);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .tech-row td:last-child {
+      border-radius: 0 12px 12px 0;
+      border-right: 1px solid var(--border);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tech-name-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tech-name {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .tech-version {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      width: fit-content;
+    }
+
+    .tech-what {
+      font-size: 0.875rem;
+      color: var(--text);
+      line-height: 1.55;
+      margin-bottom: 8px;
+    }
+    .tech-why {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+      display: flex;
+      gap: 8px;
+    }
+    .tech-why::before {
+      content: '→';
+      color: var(--brand);
+      flex-shrink: 0;
+      font-weight: 700;
+      margin-top: 1px;
+    }
+
+    /* TAG COLORS */
+    .tag-teal   { background: rgba(14,147,132,0.18);  color: #0fd4be; border: 1px solid rgba(14,147,132,0.3); }
+    .tag-blue   { background: rgba(96,165,250,0.15);  color: #93c5fd; border: 1px solid rgba(96,165,250,0.25); }
+    .tag-purple { background: rgba(167,139,250,0.15); color: #c4b5fd; border: 1px solid rgba(167,139,250,0.25); }
+    .tag-green  { background: rgba(74,222,128,0.15);  color: #86efac; border: 1px solid rgba(74,222,128,0.25); }
+    .tag-amber  { background: rgba(251,191,36,0.15);  color: #fcd34d; border: 1px solid rgba(251,191,36,0.25); }
+    .tag-pink   { background: rgba(244,114,182,0.15); color: #f9a8d4; border: 1px solid rgba(244,114,182,0.25); }
+    .tag-slate  { background: rgba(148,163,184,0.12); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.2); }
+
+    .cat-icon.cat-frontend { background: rgba(96,165,250,0.15); }
+    .cat-icon.cat-ai       { background: rgba(14,147,132,0.15); }
+    .cat-icon.cat-db       { background: rgba(167,139,250,0.15); }
+    .cat-icon.cat-files    { background: rgba(251,191,36,0.15); }
+    .cat-icon.cat-dev      { background: rgba(148,163,184,0.12); }
+    .cat-icon.cat-design   { background: rgba(244,114,182,0.15); }
+
+    /* FOOTER */
+    .pitch-footer {
+      text-align: center;
+      margin-top: 64px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+    .pitch-footer p { font-size: 13px; color: var(--muted); }
+    .pitch-footer strong { color: var(--brand); }
+
+    @media (max-width: 680px) {
+      .tech-table thead { display: none; }
+      .tech-row { display: block; }
+      .tech-row td { display: block; border: none !important; padding: 12px 16px; }
+      .tech-row td:first-child { border-radius: 12px 12px 0 0; border: 1px solid var(--border) !important; border-bottom: none !important; }
+      .tech-row td:last-child  { border-radius: 0 0 12px 12px; border: 1px solid var(--border) !important; border-top: none !important; }
+      .stats-bar { flex-direction: column; }
+      .stat + .stat { border-left: none; border-top: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badge"><span class="dot"></span>Hackathon 2026 &middot; Tech Stack</div>
+    <h1>Built on a <span class="accent">Modern,<br>Production-Grade</span> Stack</h1>
+    <p>Every technology in DisputeCompass was chosen deliberately &mdash; for performance, developer experience, and hackathon speed without sacrificing quality.</p>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat"><span class="stat-num">16</span><span class="stat-label">Technologies</span></div>
+    <div class="stat"><span class="stat-num">5</span><span class="stat-label">AI Modules</span></div>
+    <div class="stat"><span class="stat-num">70B</span><span class="stat-label">Param LLM</span></div>
+    <div class="stat"><span class="stat-num">0</span><span class="stat-label">Cloud DB Deps</span></div>
+  </div>
+
+  <!-- ===== FRONTEND ===== -->
+  <div class="cat-header">
+    <div class="cat-icon cat-frontend">&#128187;</div>
+    <span class="cat-title" style="color:#93c5fd;">Frontend Framework</span>
+    <div class="cat-line"></div>
+  </div>
+
+  <table class="tech-table">
+    <thead>
+      <tr>
+        <th>Technology</th>
+        <th>What it is &amp; Why we used it</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">Next.js <span class="tech-version">16</span></span>
+            <span class="tag tag-blue">Framework</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">React meta-framework with App Router, Server Components, and built-in API routes &mdash; all in one project.</p>
+          <p class="tech-why">Eliminated the need for a separate backend server. API routes handle all AI calls server-side, keeping the NVIDIA API key private. File-based routing gave us 5 feature pages in minutes.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">React <span class="tech-version">19</span></span>
+            <span class="tag tag-blue">UI Library</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">The industry-standard declarative UI library with concurrent features and Server Components support.</p>
+          <p class="tech-why">React 19's async transitions make streaming AI responses feel native. Massive ecosystem = faster development with pre-built patterns and community support.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">TypeScript <span class="tech-version">5</span></span>
+            <span class="tag tag-blue">Language</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Typed superset of JavaScript providing static type checking at build time.</p>
+          <p class="tech-why">Catches bugs before runtime &mdash; critical in a hackathon where speed matters. AI response schemas are fully typed so we always know the shape of data from NVIDIA NIM.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">Tailwind CSS <span class="tech-version">v4</span></span>
+            <span class="tag tag-blue">Styling</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Utility-first CSS framework. v4 uses a pure CSS engine &mdash; no config file, blazing-fast HMR.</p>
+          <p class="tech-why">Design tokens (teal brand, risk colours) defined once in CSS variables and consumed everywhere. Zero context-switching between HTML and CSS files during rapid development.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">shadcn/ui <span class="tech-version">4</span></span>
+            <span class="tag tag-blue">Component Lib</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Copy-paste, fully-owned UI components built on Radix UI primitives. Source lives in your repo &mdash; not a dependency.</p>
+          <p class="tech-why">Gave us accessible, unstyled-by-default components (Dialog, Badge, Button, Accordion) that we fully customised to our teal design system. No fighting a third-party design opinion.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">lucide-react <span class="tech-version">1.45</span></span>
+            <span class="tag tag-slate">Icons</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">A clean, consistent open-source icon set with 1500+ icons as React SVG components.</p>
+          <p class="tech-why">Pixel-perfect icons for risk badges, navigation, and module cards. Tree-shaken so only used icons are bundled. Consistent 24px grid matches our design system perfectly.</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===== AI ===== -->
+  <div class="cat-header">
+    <div class="cat-icon cat-ai">&#129302;</div>
+    <span class="cat-title" style="color:#0fd4be;">AI &amp; Language Models</span>
+    <div class="cat-line"></div>
+  </div>
+
+  <table class="tech-table">
+    <tbody>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">NVIDIA NIM API</span>
+            <span class="tag tag-teal">Inference Platform</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">NVIDIA's enterprise-grade AI inference microservices &mdash; fully OpenAI-API-compatible cloud endpoints with ultra-low latency and GPU acceleration.</p>
+          <p class="tech-why">The hackathon's core requirement. NIM provides GPU-accelerated inference for a 70B model without managing any infrastructure. OpenAI-compatible API meant we used the standard SDK with a single base URL swap.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">Llama 3.3 70B</span>
+            <span class="tag tag-teal">LLM</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Meta's 70-billion parameter instruction-following model &mdash; best-in-class open model for reasoning and long-context tasks.</p>
+          <p class="tech-why">Legal document analysis requires deep comprehension, nuanced risk assessment, and structured JSON output. Llama 3.3 70B outperforms smaller models dramatically on this domain, consistently producing coherent, legally-aware analysis across all 5 modules.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">OpenAI SDK <span class="tech-version">v7</span></span>
+            <span class="tag tag-teal">API Client</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">The official OpenAI TypeScript/Node.js client with support for streaming, structured outputs, and all chat completion parameters.</p>
+          <p class="tech-why">NVIDIA NIM exposes an OpenAI-compatible API, so we get a well-typed, battle-tested SDK for free. Streaming support means users see AI output token-by-token instead of waiting 30+ seconds for a full response.</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===== DATABASE ===== -->
+  <div class="cat-header">
+    <div class="cat-icon cat-db">&#128451;</div>
+    <span class="cat-title" style="color:#c4b5fd;">Database &amp; ORM</span>
+    <div class="cat-line"></div>
+  </div>
+
+  <table class="tech-table">
+    <tbody>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">Prisma ORM <span class="tech-version">5</span></span>
+            <span class="tag tag-purple">ORM</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Next-gen Node.js &amp; TypeScript ORM with auto-generated fully-typed client, schema migrations, and an intuitive query API.</p>
+          <p class="tech-why">Session management and analysis history required structured data. Schema-first approach lets us define the data model once and get a fully-typed client instantly &mdash; no raw SQL, no runtime errors from column name typos.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">SQLite</span>
+            <span class="tag tag-purple">Database</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">A serverless, self-contained, zero-configuration SQL database stored as a single local file.</p>
+          <p class="tech-why">Perfect for a hackathon &mdash; zero infrastructure, zero cost, zero setup. Documents are never sent to an external database, making our privacy story bulletproof. One file (<code>dev.db</code>) holds everything and is trivially gitignored.</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===== FILE PROCESSING ===== -->
+  <div class="cat-header">
+    <div class="cat-icon cat-files">&#128196;</div>
+    <span class="cat-title" style="color:#fcd34d;">File Processing</span>
+    <div class="cat-line"></div>
+  </div>
+
+  <table class="tech-table">
+    <tbody>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">pdf-parse <span class="tech-version">2.4</span></span>
+            <span class="tag tag-amber">PDF</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Node.js library that extracts plain text from PDF files using Mozilla's pdf.js under the hood.</p>
+          <p class="tech-why">Legal documents are predominantly PDFs. Handles text layers, multi-page documents, and complex layouts &mdash; extracting clean text fed directly to the LLM without formatting noise or binary garbage.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">mammoth <span class="tech-version">1.12</span></span>
+            <span class="tag tag-amber">DOCX</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Converts .docx Word documents to clean plain text or HTML, preserving semantic structure while stripping formatting noise.</p>
+          <p class="tech-why">Many legal contracts arrive as Word documents. Mammoth's clean extraction (vs. raw XML parsing) gives the LLM well-structured input &mdash; no XML tags or binary data polluting the context window.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">multer <span class="tech-version">2.3</span></span>
+            <span class="tag tag-amber">Upload</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Node.js middleware for handling <code>multipart/form-data</code> &mdash; the format used for file uploads in web forms.</p>
+          <p class="tech-why">Handles the entire upload pipeline inside Next.js API routes: receiving the binary stream, validating MIME types, enforcing file size limits, and passing the buffer to pdf-parse or mammoth for extraction.</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===== DESIGN ===== -->
+  <div class="cat-header">
+    <div class="cat-icon cat-design">&#127912;</div>
+    <span class="cat-title" style="color:#f9a8d4;">Typography &amp; Design System</span>
+    <div class="cat-line"></div>
+  </div>
+
+  <table class="tech-table">
+    <tbody>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">Geist Font</span>
+            <span class="tag tag-pink">Headings</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Vercel's modern geometric sans-serif typeface, purpose-built for developer tools and professional UIs.</p>
+          <p class="tech-why">Headings and brand text use Geist for its clean, authoritative feel &mdash; appropriate for a legal tech tool where trust is paramount. Geometric forms feel precise and modern without being cold.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">Inter Font</span>
+            <span class="tag tag-pink">Body</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">The gold-standard open-source typeface optimised for screen readability &mdash; used by Figma, Linear, and hundreds of leading SaaS products.</p>
+          <p class="tech-why">Legal documents mean dense text. Inter's optical size adjustments keep long paragraphs of AI-generated analysis highly readable at 14&ndash;16px on all screen sizes and densities.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">Calm Clarity Palette</span>
+            <span class="tag tag-pink">Color System</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Custom design system: Slate/charcoal base with teal (#0E9384) accent, warm linen background (#FAFAF9), and a semantic risk-colour scale.</p>
+          <p class="tech-why">Teal conveys calm authority &mdash; essential for a legal tool users trust with serious problems. The risk palette (critical red / warning amber / safe green) maps directly to legal clause severity, making complex analysis scannable at a glance.</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===== DEV TOOLING ===== -->
+  <div class="cat-header">
+    <div class="cat-icon cat-dev">&#9881;&#65039;</div>
+    <span class="cat-title" style="color:#cbd5e1;">Dev Tooling</span>
+    <div class="cat-line"></div>
+  </div>
+
+  <table class="tech-table">
+    <tbody>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">ESLint <span class="tech-version">9</span></span>
+            <span class="tag tag-slate">Linter</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Industry-standard JavaScript/TypeScript linter with flat config support introduced in v9.</p>
+          <p class="tech-why">Next.js ships with <code>eslint-config-next</code> that catches React mistakes (missing keys, invalid hooks) automatically. Flat config makes domain-specific rules easy to add without complex setup overhead.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">class-variance-authority</span>
+            <span class="tag tag-slate">Utility</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">A tiny utility for building variant-based component APIs with Tailwind CSS classes.</p>
+          <p class="tech-why">Powers our <code>RiskBadge</code> component &mdash; one component handles <code>critical</code>, <code>warning</code>, and <code>safe</code> variants with different colours and styles. No conditional string concatenation spaghetti.</p>
+        </td>
+      </tr>
+      <tr class="tech-row">
+        <td>
+          <div class="tech-name-wrap">
+            <span class="tech-name">tailwind-merge</span>
+            <span class="tag tag-slate">Utility</span>
+          </div>
+        </td>
+        <td>
+          <p class="tech-what">Intelligently merges Tailwind CSS classes, resolving conflicts (e.g. <code>p-2 + p-4 &rarr; p-4</code>) without duplicates.</p>
+          <p class="tech-why">Essential for the <code>cn()</code> utility used throughout shadcn/ui &mdash; ensures dynamic class overrides work correctly when components accept <code>className</code> props from parent pages.</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- FOOTER -->
+  <div class="pitch-footer">
+    <p>&#x1F9ED; <strong>DisputeCompass</strong> &middot; Built for Hackathon 2026 &middot; Powered by <strong>NVIDIA NIM</strong> + <strong>Llama 3.3 70B</strong></p>
+    <p style="margin-top:8px;">Making legal clarity accessible to everyone &mdash; not just those who can afford a lawyer.</p>
+  </div>
+
+</div>
+</body>
+</html>

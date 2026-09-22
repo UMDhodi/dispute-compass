@@ -1,71 +1,89 @@
-# DisputeCompass 🧭
+﻿<div align="center">
+
+![DisputeCompass Banner](public/banner.jpg)
+
+<br/>
+
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![NVIDIA NIM](https://img.shields.io/badge/NVIDIA_NIM-Llama_3.3_70B-76B900?style=flat-square&logo=nvidia&logoColor=white)](https://build.nvidia.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-teal?style=flat-square)](LICENSE)
+
+<br/>
 
 **AI-powered legal document analysis and dispute navigation.**
+Transform complex legal documents into plain-English insights, actionable roadmaps, and professional briefs in seconds.
 
-> **Legal Disclaimer:** DisputeCompass provides legal information and educational assistance only. It does not provide legal advice and is not a substitute for a qualified attorney. Always consult a licensed lawyer for your specific legal situation.
+<br/>
+
+> ⚠️ **Legal Disclaimer:** DisputeCompass provides legal information and educational assistance only. It does not provide legal advice and is not a substitute for a qualified attorney. Always consult a licensed lawyer for your specific legal situation.
+
+</div>
 
 ---
 
-## Overview
+## ✨ Features
 
-DisputeCompass is a GenAI-powered application that makes legal information accessible to everyday people — particularly tenants, consumers, and anyone facing a small dispute. It transforms complex legal documents into plain-English insights, actionable roadmaps, and professional-grade briefs.
-
-Built for **Hackathon 2026** using NVIDIA NIM's enterprise AI inference platform with Llama 3.3 70B.
-
-## Features — 5 Modules
+DisputeCompass ships five AI-powered modules, each solving a distinct legal pain point:
 
 | Module | Description |
-|--------|-------------|
-| 🔍 **Clause & Risk Analyzer** | Upload any legal document; get color-coded risk scoring for every clause with plain-English explanations |
+|:---|:---|
+| 🔍 **Clause & Risk Analyzer** | Upload any legal document and get color-coded risk scoring for every clause with plain-English explanations |
 | ⚖️ **Document Comparator** | Side-by-side comparison of two contract versions with favorable/adverse change identification |
-| 🗺️ **Action Roadmap** | Describe your dispute situation; get a step-by-step action plan with evidence checklist and deadlines |
-| 💬 **Document Q&A Copilot** | Ask plain-English questions about your document; get answers grounded in the document with citations |
+| 🗺️ **Action Roadmap** | Describe your dispute situation and get a step-by-step action plan with evidence checklist and deadlines |
+| 💬 **Document Q&A Copilot** | Ask plain-English questions about your document and get grounded answers with citations |
 | 📝 **Legal Brief Generator** | Generate professional demand letters, legal notices, and lawyer briefing dossiers |
 
-## Tech Stack
+---
 
-- **Frontend:** Next.js 15 · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui
-- **AI:** NVIDIA NIM API (`meta/llama-3.3-70b-instruct`) via OpenAI-compatible SDK
-- **Database:** Prisma ORM + SQLite (local `dev.db`)
-- **Fonts:** Geist (headings) + Inter (body)
-- **File Processing:** pdf-parse (PDF), mammoth (DOCX)
+## 🛠️ Tech Stack
 
-## Design System
+| Layer | Technologies |
+|:---|:---|
+| **Frontend** | Next.js 16 · React 19 · TypeScript 5 · Tailwind CSS v4 · shadcn/ui |
+| **AI / LLM** | NVIDIA NIM · meta/llama-3.3-70b-instruct · OpenAI-compatible SDK |
+| **Database** | Prisma ORM 5 · SQLite (dev.db — local only) |
+| **File Processing** | pdf-parse · mammoth · multer |
+| **Typography** | Geist (headings) · Inter (body) |
 
-**Palette:** Calm Clarity — Slate/charcoal base with teal/sage green accents
-- Background: `#FAFAF9` (warm linen)
-- Brand: `#0E9384` (teal)
-- Text: `#1A1A19`
-- Risk critical: `#DC2626` · warning: `#D97706` · safe: `#16A34A`
+### Design System
 
-**Logo:** 4-point compass rose with north petal styled as a document corner fold
+**Palette:** *Calm Clarity* — Slate/charcoal base with teal/sage green accents
 
-## Getting Started
+```
+Background   #FAFAF9  ·  warm linen
+Brand        #0E9384  ·  teal
+Text         #1A1A19
+Risk:Critical #DC2626  ·  Risk:Warning #D97706  ·  Risk:Safe #16A34A
+```
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ (tested on 22.x)
-- npm 10+
-- NVIDIA NIM API key from [build.nvidia.com](https://build.nvidia.com)
+- **Node.js** 18+ (tested on 22.x)
+- **npm** 10+
+- **NVIDIA NIM API key** → [build.nvidia.com](https://build.nvidia.com)
 
 ### Installation
 
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone <your-repo-url>
 cd dispute-compass
 
-# Install dependencies
+# 2. Install dependencies
 npm install
 
-# Set up environment variables
+# 3. Configure environment variables
 cp .env.example .env.local
-# Edit .env.local and add your NVIDIA_API_KEY
 ```
 
-### Configure NVIDIA API Key
-
-Edit `.env.local`:
+Edit .env.local:
 
 ```env
 DATABASE_URL="file:./dev.db"
@@ -75,18 +93,17 @@ NVIDIA_API_KEY="your_nvidia_api_key_here"
 ### Database Setup
 
 ```bash
-# Generate Prisma client and create SQLite database
 npx prisma generate
 npx prisma db push
 ```
 
-### Run Development Server
+### Run Dev Server
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000) 🎉
 
 ### Build for Production
 
@@ -95,79 +112,109 @@ npm run build
 npm start
 ```
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```
 dispute-compass/
+├── public/
+│   └── banner.jpg               # Project banner
 ├── prisma/
-│   └── schema.prisma         # SQLite schema
+│   └── schema.prisma            # SQLite schema
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── analyze/      # Clause & Risk Analyzer API
-│   │   │   ├── compare/      # Document Comparator API
-│   │   │   ├── roadmap/      # Action Roadmap API
-│   │   │   ├── qa/           # Document Q&A API
-│   │   │   ├── brief/        # Brief Generator API
-│   │   │   └── extract/      # PDF/DOCX text extraction
-│   │   ├── analyze/          # Analyzer page
-│   │   ├── compare/          # Comparator page
-│   │   ├── roadmap/          # Roadmap page
-│   │   ├── qa/               # Q&A page
-│   │   ├── brief/            # Brief Generator page
-│   │   ├── layout.tsx        # Root layout with Navbar + Footer
-│   │   ├── page.tsx          # Landing page
-│   │   └── globals.css       # Design tokens + base styles
+│   │   │   ├── analyze/         # Clause & Risk Analyzer API
+│   │   │   ├── compare/         # Document Comparator API
+│   │   │   ├── roadmap/         # Action Roadmap API
+│   │   │   ├── qa/              # Document Q&A API
+│   │   │   ├── brief/           # Brief Generator API
+│   │   │   └── extract/         # PDF/DOCX text extraction
+│   │   ├── analyze/             # Analyzer page
+│   │   ├── compare/             # Comparator page
+│   │   ├── roadmap/             # Roadmap page
+│   │   ├── qa/                  # Q&A page
+│   │   ├── brief/               # Brief Generator page
+│   │   ├── layout.tsx           # Root layout (Navbar + Footer)
+│   │   ├── page.tsx             # Landing page
+│   │   └── globals.css          # Design tokens + base styles
 │   ├── components/
 │   │   ├── layout/
-│   │   │   ├── navbar.tsx    # Sticky responsive navbar
-│   │   │   └── footer.tsx    # Footer with legal disclaimer
-│   │   ├── ui/               # shadcn/ui components
-│   │   ├── logo.tsx          # Compass rose SVG logo
-│   │   ├── file-upload.tsx   # Drag-drop file upload
-│   │   ├── risk-badge.tsx    # Risk level badges
-│   │   └── disclaimer-banner.tsx # Legal disclaimer components
+│   │   │   ├── navbar.tsx       # Sticky responsive navbar
+│   │   │   └── footer.tsx       # Footer with legal disclaimer
+│   │   ├── ui/                  # shadcn/ui components
+│   │   ├── logo.tsx             # Compass rose SVG logo
+│   │   ├── file-upload.tsx      # Drag-drop file upload
+│   │   ├── risk-badge.tsx       # Risk level badges
+│   │   └── disclaimer-banner.tsx
 │   └── lib/
-│       ├── nvidia.ts         # NVIDIA NIM API client
-│       ├── prisma.ts         # Prisma singleton
-│       ├── prompts.ts        # AI system prompts (5 modules)
-│       ├── sanitize.ts       # Input sanitization
-│       └── utils.ts          # Utilities (cn, etc.)
-└── .env.example              # Environment variable template
+│       ├── nvidia.ts            # NVIDIA NIM API client
+│       ├── prisma.ts            # Prisma singleton
+│       ├── prompts.ts           # AI system prompts (5 modules)
+│       ├── sanitize.ts          # Input sanitization
+│       └── utils.ts             # Utilities (cn, etc.)
+└── .env.example
 ```
 
-## API Routes
+---
 
-All routes accept `POST` with JSON bodies:
+## 🔌 API Reference
+
+All routes accept POST with JSON bodies:
 
 | Route | Body | Response |
-|-------|------|----------|
-| `POST /api/extract` | `FormData: file` | `{ text, fileName, charCount }` |
-| `POST /api/analyze` | `{ text, sessionId? }` | `{ result: AnalysisResult }` |
-| `POST /api/compare` | `{ docA, docB, labelA?, labelB? }` | `{ result: CompareResult }` |
-| `POST /api/roadmap` | `{ situation, documentText?, disputeType? }` | `{ result: RoadmapResult }` |
-| `POST /api/qa` | `{ question, documentText, sessionId? }` | `{ result: QAResult }` |
-| `POST /api/brief` | `{ situation, briefType?, yourName?, recipientName?, documentText? }` | `{ result: BriefResult }` |
+|:---|:---|:---|
+| POST /api/extract | FormData: file | { text, fileName, charCount } |
+| POST /api/analyze | { text, sessionId? } | { result: AnalysisResult } |
+| POST /api/compare | { docA, docB, labelA?, labelB? } | { result: CompareResult } |
+| POST /api/roadmap | { situation, documentText?, disputeType? } | { result: RoadmapResult } |
+| POST /api/qa | { question, documentText, sessionId? } | { result: QAResult } |
+| POST /api/brief | { situation, briefType?, yourName?, recipientName?, documentText? } | { result: BriefResult } |
 
-## Security & Privacy
+---
 
-- All documents processed server-side, never stored in cloud
-- Input sanitization strips null bytes, control characters, and caps length
-- SQLite database is local-only (`dev.db` — gitignored)
-- Legal disclaimers shown prominently throughout the application
-- No user authentication required (designed for hackathon demo)
+## 🔒 Security & Privacy
 
-## Contributing
+- ✅ All documents processed **server-side** — never stored in cloud
+- ✅ Input sanitization strips null bytes, control characters, and caps length
+- ✅ SQLite database is **local-only** (dev.db — gitignored)
+- ✅ Legal disclaimers shown prominently throughout the application
+- ✅ No user authentication required *(designed for hackathon demo)*
+
+---
+
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit changes: `git commit -m 'feat: add your feature'`
-4. Push and open a PR
+2. Create a feature branch: git checkout -b feature/your-feature
+3. Commit your changes: git commit -m 'feat: add your feature'
+4. Push and open a Pull Request
 
-## License
+---
+
+## 📄 License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-*Built with ❤️ for [Hackathon 2026] · Not a substitute for professional legal advice*
+<div align="center">
+
+<br/>
+
+**Made with ❤️ by Uday Mayank Dhodi**
+
+*Built for* **Prompt War** *— organized by* **Google × Hack2Skill**
+
+<br/>
+
+*Making legal clarity accessible to everyone — not just those who can afford a lawyer.*
+
+<br/>
+
+---
+
+*DisputeCompass is not a substitute for professional legal advice. Always consult a licensed attorney for your specific situation.*
+
+</div>
