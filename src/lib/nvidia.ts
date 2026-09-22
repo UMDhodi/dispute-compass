@@ -10,7 +10,7 @@ if (!process.env.NVIDIA_API_KEY) {
 }
 
 const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
-export const NVIDIA_MODEL = "meta/llama-3.3-70b-instruct";
+export const NVIDIA_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct";
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
