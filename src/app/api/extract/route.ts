@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import path from "path";
+import { pathToFileURL } from "url";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,11 +9,14 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
   // Use pdfjs-dist legacy build — runs in Node.js without browser globals like DOMMatrix.
   const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-  // Resolve the worker file path from node_modules and convert to a file:// URL.
-  // pdfjs-dist v6 requires a valid workerSrc even for server-side (fake worker) mode.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const workerPath: string = require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `file:///${workerPath.replace(/\\/g, "/")}`;
+  // Build the worker path from process.cwd() (project root).
+  // We CANNOT use require.resolve() here — Next.js/webpack replaces it with a
+  // numeric module ID at compile time, causing "number.replace is not a function".
+  const workerPath = path.join(
+    process.cwd(),
+    "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"
+  );
+  pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
 
   const loadingTask = pdfjsLib.getDocument({
     data: new Uint8Array(buffer),
