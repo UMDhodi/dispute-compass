@@ -1,6 +1,9 @@
 /**
  * NVIDIA NIM client using native fetch (OpenAI-compatible REST API).
- * Avoids openai SDK module resolution issues.
+ *
+ * Uses a model fallback chain: tries each model in order until one works,
+ * then caches it for the lifetime of the process. This gracefully handles
+ * EOL models and account-tier restrictions.
  */
 
 if (!process.env.NVIDIA_API_KEY) {
@@ -10,7 +13,23 @@ if (!process.env.NVIDIA_API_KEY) {
 }
 
 const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
-export const NVIDIA_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct";
+
+/**
+ * Ordered list of models to try, best-first.
+ * Add or remove entries as NVIDIA updates their catalog.
+ */
+const MODEL_FALLBACK_CHAIN = [
+  "meta/llama-3.2-11b-vision-instruct",   // Llama 3.2 11B — small, widely available
+  "meta/llama-3.2-90b-vision-instruct",   // Llama 3.2 90B — larger
+  "deepseek-ai/deepseek-v4.1-flash",      // DeepSeek Flash — fast & capable
+  "mistralai/mistral-7b-instruct-v0.3",   // Mistral 7B — reliable free-tier
+  "google/gemma-3-4b-it",                 // Gemma 3 4B — lightweight fallback
+  "nv-mistralai/mistral-nemo-12b-instruct", // Mistral Nemo 12B
+  "mistralai/mistral-large-2-instruct",   // Mistral Large 2
+];
+
+/** Cached model ID — set after first successful probe. */
+let resolvedModel: string | null = null;
 
 interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -25,13 +44,66 @@ interface ChatCompletionResponse {
 }
 
 /**
+ * Probe a model with a minimal request.
+ * Returns true if the model responds with HTTP 200.
+ */
+async function probeModel(model: string): Promise<boolean> {
+  try {
+    const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.NVIDIA_API_KEY ?? ""}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "user", content: "Hi" }],
+        max_tokens: 5,
+        stream: false,
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Find the first working model from the fallback chain.
+ * Result is cached in `resolvedModel` for subsequent calls.
+ */
+async function getWorkingModel(): Promise<string> {
+  if (resolvedModel) return resolvedModel;
+
+  console.log("[nvidia] Probing model fallback chain...");
+  for (const model of MODEL_FALLBACK_CHAIN) {
+    console.log(`[nvidia] Trying model: ${model}`);
+    if (await probeModel(model)) {
+      console.log(`[nvidia] Using model: ${model}`);
+      resolvedModel = model;
+      return model;
+    }
+  }
+
+  throw new Error(
+    "No working NVIDIA NIM model found for this API key. " +
+    "Your free-tier key may need renewal or a different model set. " +
+    "Visit https://build.nvidia.com to check available models for your account."
+  );
+}
+
+/**
  * Send a single prompt to NVIDIA NIM and return the full text response.
+ * Automatically selects the best available model for this API key.
  */
 export async function callNvidia(
   systemPrompt: string,
   userPrompt: string,
   maxTokens = 2048
 ): Promise<string> {
+  const model = await getWorkingModel();
+
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt },
     { role: "user", content: userPrompt },
@@ -44,7 +116,7 @@ export async function callNvidia(
       Authorization: `Bearer ${process.env.NVIDIA_API_KEY ?? ""}`,
     },
     body: JSON.stringify({
-      model: NVIDIA_MODEL,
+      model,
       messages,
       max_tokens: maxTokens,
       temperature: 0.2,
@@ -54,6 +126,10 @@ export async function callNvidia(
   });
 
   if (!response.ok) {
+    // If the cached model stops working, reset so next call re-probes.
+    if (response.status === 404 || response.status === 410) {
+      resolvedModel = null;
+    }
     const errorText = await response.text();
     throw new Error(`NVIDIA NIM API error ${response.status}: ${errorText}`);
   }
@@ -71,6 +147,8 @@ export async function streamNvidiaResponse(
   userPrompt: string,
   maxTokens = 2048
 ): Promise<ReadableStream<Uint8Array>> {
+  const model = await getWorkingModel();
+
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt },
     { role: "user", content: userPrompt },
@@ -83,7 +161,7 @@ export async function streamNvidiaResponse(
       Authorization: `Bearer ${process.env.NVIDIA_API_KEY ?? ""}`,
     },
     body: JSON.stringify({
-      model: NVIDIA_MODEL,
+      model,
       messages,
       max_tokens: maxTokens,
       temperature: 0.2,
@@ -93,7 +171,11 @@ export async function streamNvidiaResponse(
   });
 
   if (!response.ok) {
-    throw new Error(`NVIDIA NIM stream error ${response.status}`);
+    if (response.status === 404 || response.status === 410) {
+      resolvedModel = null;
+    }
+    const errorText = await response.text();
+    throw new Error(`NVIDIA NIM stream error ${response.status}: ${errorText}`);
   }
 
   const encoder = new TextEncoder();
