@@ -3,6 +3,36 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  // Use pdfjs-dist legacy build — runs in Node.js without browser globals like DOMMatrix.
+  // Dynamic import handles the ESM module format.
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
+  // Disable the web worker entirely for server-side use.
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(buffer),
+    // @ts-expect-error — disableWorker is valid but missing from older type stubs
+    disableWorker: true,
+    useSystemFonts: true,
+  });
+  const pdf = await loadingTask.promise;
+
+  const pageTexts: string[] = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((item: any) => ("str" in item ? item.str : ""))
+      .join(" ");
+    pageTexts.push(pageText);
+  }
+
+  return pageTexts.join("\n");
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -24,27 +54,7 @@ export async function POST(request: NextRequest) {
 
     if (fileName.endsWith(".pdf")) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const pdfModule = require("pdf-parse");
-        if (pdfModule?.PDFParse) {
-          // pdf-parse v2+
-          const parser = new pdfModule.PDFParse({ data: buffer });
-          try {
-            const data = await parser.getText();
-            text = data.text || "";
-          } finally {
-            await parser.destroy().catch(() => {});
-          }
-        } else if (typeof pdfModule === "function") {
-          // pdf-parse v1
-          const data = await pdfModule(buffer);
-          text = data.text || "";
-        } else if (typeof pdfModule?.default === "function") {
-          const data = await pdfModule.default(buffer);
-          text = data.text || "";
-        } else {
-          throw new Error("Compatible PDF parser interface not found");
-        }
+        text = await extractPdfText(buffer);
       } catch (pdfErr) {
         console.error("[/api/extract] PDF parsing error:", pdfErr);
         const msg = pdfErr instanceof Error ? pdfErr.message : "Failed to parse PDF";
