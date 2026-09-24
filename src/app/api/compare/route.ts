@@ -3,12 +3,35 @@ import { callNvidia } from "@/lib/nvidia";
 import { COMPARE_SYSTEM_PROMPT } from "@/lib/prompts";
 import { sanitizeComparePair, safeParseJSON } from "@/lib/sanitize";
 import { prisma } from "@/lib/prisma";
+import { aiLimiter, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+export async function GET() {
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+}
+
 export async function POST(request: NextRequest) {
+  // ── Rate limit ──────────────────────────────────────────────────────────
+  const ip = getClientIp(request);
+  const rl = aiLimiter.check(ip);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before trying again." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) },
+      }
+    );
+  }
+
   try {
+    const contentType = request.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+      return NextResponse.json({ error: "Content-Type must be application/json" }, { status: 415 });
+    }
+
     const body = await request.json() as {
       docA?: unknown;
       docB?: unknown;
@@ -20,37 +43,44 @@ export async function POST(request: NextRequest) {
     const { docA, docB } = sanitizeComparePair(body.docA, body.docB);
 
     if (docA.length < 50 || docB.length < 50) {
-      return NextResponse.json({ error: "Both documents must have meaningful content" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Both documents must have meaningful content" },
+        { status: 400 }
+      );
     }
 
-    const labelA = typeof body.labelA === "string" ? body.labelA.slice(0, 100) : "Document A";
-    const labelB = typeof body.labelB === "string" ? body.labelB.slice(0, 100) : "Document B";
+    // Sanitize labels — strip any HTML / script characters
+    const labelA =
+      typeof body.labelA === "string" ? body.labelA.replace(/[<>"']/g, "").slice(0, 100) : "Document A";
+    const labelB =
+      typeof body.labelB === "string" ? body.labelB.replace(/[<>"']/g, "").slice(0, 100) : "Document B";
 
-    const userPrompt = `Compare these two legal documents.
+    const sessionId =
+      typeof body.sessionId === "string" && /^[\w-]{1,64}$/.test(body.sessionId)
+        ? body.sessionId
+        : null;
 
-=== ${labelA} ===
-${docA}
-
-=== ${labelB} ===
-${docB}
-
-Identify all significant differences between them.`;
+    const userPrompt = `Compare these two legal documents.\n\n=== ${labelA} ===\n${docA}\n\n=== ${labelB} ===\n${docB}\n\nIdentify all significant differences between them.`;
 
     const rawResponse = await callNvidia(COMPARE_SYSTEM_PROMPT, userPrompt, 3000);
 
-    const jsonMatch = rawResponse.match(/```(?:json)?\s*([\s\S]*?)```/) ??
+    const jsonMatch =
+      rawResponse.match(/```(?:json)?\s*([\s\S]*?)```/) ??
       rawResponse.match(/(\{[\s\S]*\})/);
     const jsonStr = jsonMatch ? jsonMatch[1] : rawResponse;
 
     const result = safeParseJSON(jsonStr.trim());
     if (!result) {
-      return NextResponse.json({ error: "Failed to parse AI comparison. Please try again." }, { status: 502 });
+      return NextResponse.json(
+        { error: "Failed to parse AI comparison. Please try again." },
+        { status: 502 }
+      );
     }
 
-    if (typeof body.sessionId === "string" && body.sessionId) {
+    if (sessionId) {
       await prisma.analysisResult.create({
         data: {
-          sessionId: body.sessionId,
+          sessionId,
           module: "compare",
           inputText: `${labelA} vs ${labelB}`,
           outputJson: JSON.stringify(result),

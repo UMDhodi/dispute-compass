@@ -39,9 +39,11 @@ function ClauseCard({ clause }: { clause: Clause }) {
       }}
     >
       <button
-        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
+        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-500)] focus-visible:ring-inset"
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
+        aria-controls={`clause-body-${clause.id}`}
+        aria-label={`${expanded ? "Collapse" : "Expand"} clause: ${clause.title}`}
       >
         <div className="flex items-center gap-3 min-w-0">
           <RiskBadge level={clause.riskLevel} size="sm" />
@@ -59,7 +61,7 @@ function ClauseCard({ clause }: { clause: Clause }) {
       </button>
 
       {expanded && (
-        <div className="px-5 pb-5 border-t" style={{ borderColor: "var(--border)" }}>
+        <div id={`clause-body-${clause.id}`} className="px-5 pb-5 border-t" style={{ borderColor: "var(--border)" }}>
           <div className="pt-4 space-y-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide mb-1.5" style={{ color: "var(--text-muted)" }}>
@@ -190,10 +192,12 @@ export default function AnalyzePage() {
               <button
                 onClick={handleAnalyze}
                 disabled={loading || documentText.trim().length < 50}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[var(--radius-md)] text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[var(--radius-md)] text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-500)]"
                 style={{ background: "var(--brand-500)" }}
+                aria-label="Analyze document for clauses and risks"
+                aria-busy={loading}
               >
-                {loading ? <><Loader2 size={15} className="animate-spin" /> Analyzing…</> : "Analyze Document"}
+                {loading ? <><Loader2 size={15} className="animate-spin" aria-hidden="true" /> Analyzing…</> : "Analyze Document"}
               </button>
             </div>
           </div>
@@ -212,8 +216,14 @@ export default function AnalyzePage() {
           )}
 
           {loading && (
-            <div className="card p-8 flex flex-col items-center justify-center gap-4" style={{ minHeight: "300px" }}>
-              <Loader2 size={32} className="animate-spin" style={{ color: "var(--brand-500)" }} />
+            <div
+              className="card p-8 flex flex-col items-center justify-center gap-4"
+              style={{ minHeight: "300px" }}
+              role="status"
+              aria-label="Analyzing document, please wait"
+              aria-live="polite"
+            >
+              <Loader2 size={32} className="animate-spin" style={{ color: "var(--brand-500)" }} aria-hidden="true" />
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>Reading and analyzing every clause…</p>
               <div className="w-full max-w-sm space-y-2">
                 {[40, 70, 55, 80].map((w, i) => (

@@ -1,17 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import { pathToFileURL } from "url";
+import { extractLimiter, getClientIp } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+}
+
+// Strict allowlist of MIME types we actually process
+const ALLOWED_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "text/markdown",
+]);
+
+// Allowed file extensions (belt-and-suspenders — never trust MIME alone)
+const ALLOWED_EXTENSIONS = new Set([".pdf", ".docx", ".txt", ".md"]);
 
 async function extractPdfText(buffer: Buffer): Promise<string> {
   // Use pdfjs-dist legacy build — runs in Node.js without browser globals like DOMMatrix.
   const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
   // Build the worker path from process.cwd() (project root).
-  // We CANNOT use require.resolve() here — Next.js/webpack replaces it with a
-  // numeric module ID at compile time, causing "number.replace is not a function".
   const workerPath = path.join(
     process.cwd(),
     "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"
@@ -39,6 +53,19 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
+  // ── Rate limit ────────────────────────────────────────────────────────────
+  const ip = getClientIp(request);
+  const rl = extractLimiter.check(ip);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait before trying again." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) },
+      }
+    );
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -47,17 +74,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Security: check file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
+    // ── Security: file size ────────────────────────────────────────────────
+    const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+    if (file.size > MAX_BYTES) {
       return NextResponse.json({ error: "File too large. Max 5MB." }, { status: 413 });
+    }
+
+    // ── Security: extension allowlist ──────────────────────────────────────
+    const fileName = file.name.toLowerCase();
+    const ext = path.extname(fileName);
+    if (!ALLOWED_EXTENSIONS.has(ext)) {
+      return NextResponse.json(
+        { error: "Unsupported file type. Please upload PDF, DOCX, TXT, or MD." },
+        { status: 415 }
+      );
+    }
+
+    // ── Security: MIME-type allowlist ──────────────────────────────────────
+    // file.type can be empty for some browsers — skip check if so,
+    // but reject if it's present and not in the allowlist.
+    if (file.type && !ALLOWED_MIME_TYPES.has(file.type)) {
+      return NextResponse.json(
+        { error: "Unsupported file type." },
+        { status: 415 }
+      );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     let text = "";
 
-    const fileName = file.name.toLowerCase();
-
-    if (fileName.endsWith(".pdf")) {
+    if (ext === ".pdf") {
       try {
         text = await extractPdfText(buffer);
       } catch (pdfErr) {
@@ -72,7 +118,7 @@ export async function POST(request: NextRequest) {
           { status: 422 }
         );
       }
-    } else if (fileName.endsWith(".docx")) {
+    } else if (ext === ".docx") {
       try {
         const mammoth = await import("mammoth");
         const result = await mammoth.extractRawText({ buffer });
@@ -90,12 +136,16 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      // Plain text fallback
+      // Plain text / markdown
       text = buffer.toString("utf-8");
     }
 
-    // Sanitize: strip null bytes, limit length
-    text = text.replace(/\0/g, "").trim().slice(0, 50_000);
+    // Sanitize: strip null bytes and control characters, limit length
+    text = text
+      .replace(/\0/g, "")
+      .replace(/[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+      .trim()
+      .slice(0, 50_000);
 
     return NextResponse.json({ text, fileName: file.name, charCount: text.length });
   } catch (err) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { Upload, FileText, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +25,11 @@ export function FileUpload({
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Unique IDs for accessible label/description wiring
+  const inputId = useId();
+  const errorId = useId();
+  const statusId = useId();
 
   const processFile = useCallback(
     async (file: File) => {
@@ -106,7 +111,9 @@ export function FileUpload({
 
   return (
     <div className={className}>
+      {/* Visually-hidden label keeps the region labelled for AT */}
       <label
+        htmlFor={inputId}
         className={cn(
           "relative flex flex-col items-center justify-center w-full rounded-[var(--radius-lg)] border-2 border-dashed cursor-pointer transition-all duration-200",
           isDragging
@@ -120,42 +127,57 @@ export function FileUpload({
         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
+        // Accessibility: announce drag-and-drop affordance to screen readers
+        aria-describedby={error ? errorId : statusId}
       >
         <input
+          id={inputId}
           type="file"
           accept={accept}
           onChange={handleFileInput}
           className="sr-only"
           disabled={loading}
           aria-label={label}
+          aria-busy={loading}
+          aria-invalid={!!error}
+          aria-describedby={error ? errorId : statusId}
         />
 
+        {/* Live region announces file-load status to screen readers */}
+        <span id={statusId} className="sr-only" aria-live="polite" aria-atomic="true">
+          {loading ? "Reading file, please wait…" : fileName ? `File loaded: ${fileName}` : ""}
+        </span>
+
         {loading ? (
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-8 h-8 border-2 border-[var(--brand-500)] border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col items-center gap-2" role="status" aria-label="Loading file">
+            <div
+              className="w-8 h-8 border-2 border-[var(--brand-500)] border-t-transparent rounded-full animate-spin"
+              aria-hidden="true"
+            />
             <span className="text-sm" style={{ color: "var(--text-muted)" }}>Reading file…</span>
           </div>
         ) : fileName ? (
           <div className="flex flex-col items-center gap-2">
-            <FileText size={28} style={{ color: "var(--risk-safe)" }} />
+            <FileText size={28} style={{ color: "var(--risk-safe)" }} aria-hidden="true" />
             <span className="text-sm font-medium text-center" style={{ color: "var(--text-primary)" }}>
               {fileName}
             </span>
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); clearFile(); }}
-              className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-colors"
+              className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-500)]"
               style={{ color: "var(--text-muted)", background: "var(--border)" }}
+              aria-label={`Remove ${fileName}`}
             >
-              <X size={12} /> Remove
+              <X size={12} aria-hidden="true" /> Remove
             </button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 text-center">
-            <Upload size={28} style={{ color: "var(--brand-500)" }} />
+            <Upload size={28} style={{ color: "var(--brand-500)" }} aria-hidden="true" />
             <div>
               <span className="text-sm font-medium" style={{ color: "var(--brand-500)" }}>{label}</span>
-              <span className="text-sm" style={{ color: "var(--text-muted)" }}> or drag & drop</span>
+              <span className="text-sm" style={{ color: "var(--text-muted)" }}> or drag &amp; drop</span>
             </div>
             <span className="text-xs" style={{ color: "var(--text-muted)" }}>
               TXT, MD, PDF, DOCX · Max {maxSizeMb}MB
@@ -165,8 +187,13 @@ export function FileUpload({
       </label>
 
       {error && (
-        <div className="mt-2 flex items-center gap-1.5 text-sm" style={{ color: "var(--risk-critical)" }}>
-          <AlertCircle size={14} />
+        <div
+          id={errorId}
+          role="alert"
+          className="mt-2 flex items-center gap-1.5 text-sm"
+          style={{ color: "var(--risk-critical)" }}
+        >
+          <AlertCircle size={14} aria-hidden="true" />
           {error}
         </div>
       )}

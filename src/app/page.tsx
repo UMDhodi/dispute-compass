@@ -112,6 +112,7 @@ export default function HomePage() {
         {/* Subtle grid background */}
         <div
           className="absolute inset-0 pointer-events-none"
+          aria-hidden="true"
           style={{
             backgroundImage:
               "radial-gradient(circle at 1px 1px, var(--border) 1px, transparent 0)",
@@ -122,6 +123,7 @@ export default function HomePage() {
         {/* Teal gradient orb */}
         <div
           className="absolute top-0 right-0 pointer-events-none"
+          aria-hidden="true"
           style={{
             width: "600px",
             height: "600px",
@@ -178,9 +180,10 @@ export default function HomePage() {
                 background: "var(--brand-500)",
                 boxShadow: "0 4px 14px rgba(14, 147, 132, 0.3)",
               }}
+              aria-label="Analyze a legal document"
             >
               Analyze a Document
-              <ArrowRight size={16} />
+              <ArrowRight size={16} aria-hidden="true" />
             </Link>
             <Link
               href="/compare"
@@ -190,6 +193,7 @@ export default function HomePage() {
                 color: "var(--text-secondary)",
                 background: "var(--surface)",
               }}
+              aria-label="Compare two contracts"
             >
               Compare Contracts
             </Link>
@@ -227,6 +231,7 @@ export default function HomePage() {
                   key={mod.href}
                   href={mod.href}
                   className="group relative card p-6 flex flex-col gap-4 no-underline hover:no-underline"
+                  aria-label={`${mod.title} — ${mod.description}`}
                 >
                   {mod.badge && (
                     <span
@@ -239,8 +244,9 @@ export default function HomePage() {
                   <div
                     className="w-11 h-11 rounded-[var(--radius-md)] flex items-center justify-center"
                     style={{ background: mod.bg }}
+                    aria-hidden="true"
                   >
-                    <Icon size={22} style={{ color: mod.color }} />
+                    <Icon size={22} style={{ color: mod.color }} aria-hidden="true" />
                   </div>
                   <div>
                     <h3
@@ -256,9 +262,10 @@ export default function HomePage() {
                   <div
                     className="inline-flex items-center gap-1 text-sm font-medium mt-auto transition-gap duration-150"
                     style={{ color: mod.color }}
+                    aria-hidden="true"
                   >
                     Get started
-                    <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                    <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
                   </div>
                 </Link>
               );
@@ -328,8 +335,9 @@ export default function HomePage() {
                   <div
                     className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center flex-shrink-0"
                     style={{ background: "var(--brand-50)" }}
+                    aria-hidden="true"
                   >
-                    <Icon size={18} style={{ color: "var(--brand-500)" }} />
+                    <Icon size={18} style={{ color: "var(--brand-500)" }} aria-hidden="true" />
                   </div>
                   <div>
                     <p className="font-semibold text-sm mb-0.5" style={{ color: "var(--text-primary)" }}>

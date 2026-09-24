@@ -4,12 +4,50 @@
  * Uses a model fallback chain: tries each model in order until one works,
  * then caches it for the lifetime of the process. This gracefully handles
  * EOL models and account-tier restrictions.
+ *
+ * Performance features:
+ * - 60 s AbortSignal timeout on every fetch call
+ * - Short-lived response cache (5 min TTL, max 50 entries) for identical prompts
  */
 
 if (!process.env.NVIDIA_API_KEY) {
   console.warn(
     "NVIDIA_API_KEY is not set. LLM features will not work. Please add it to .env.local"
   );
+}
+
+/** Simple bounded in-memory cache for (system+user) prompt pairs. */
+interface CacheEntry {
+  value: string;
+  expiresAt: number;
+}
+const RESPONSE_CACHE = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_MAX_SIZE = 50;
+
+function cacheGet(key: string): string | null {
+  const entry = RESPONSE_CACHE.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    RESPONSE_CACHE.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
+function cacheSet(key: string, value: string): void {
+  if (RESPONSE_CACHE.size >= CACHE_MAX_SIZE) {
+    // Evict oldest entry
+    const firstKey = RESPONSE_CACHE.keys().next().value;
+    if (firstKey !== undefined) RESPONSE_CACHE.delete(firstKey);
+  }
+  RESPONSE_CACHE.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
+}
+
+/** Build a compact cache key from the prompt pair. */
+function makeCacheKey(systemPrompt: string, userPrompt: string, maxTokens: number): string {
+  // Use first 200 chars of each to keep key manageable
+  return `${maxTokens}|${systemPrompt.slice(0, 200)}|${userPrompt.slice(0, 200)}`;
 }
 
 const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
@@ -109,6 +147,14 @@ export async function callNvidia(
     { role: "user", content: userPrompt },
   ];
 
+  // Check cache before making a network call
+  const cacheKey = makeCacheKey(systemPrompt, userPrompt, maxTokens);
+  const cached = cacheGet(cacheKey);
+  if (cached) {
+    console.log("[nvidia] Cache hit — returning memoised response");
+    return cached;
+  }
+
   const response = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
@@ -123,6 +169,8 @@ export async function callNvidia(
       top_p: 0.9,
       stream: false,
     }),
+    // 60-second hard timeout — prevents hanging requests
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!response.ok) {
@@ -135,7 +183,12 @@ export async function callNvidia(
   }
 
   const data = (await response.json()) as ChatCompletionResponse;
-  return data.choices[0]?.message?.content ?? "";
+  const content = data.choices[0]?.message?.content ?? "";
+
+  // Cache successful responses
+  if (content) cacheSet(cacheKey, content);
+
+  return content;
 }
 
 /**
@@ -168,6 +221,7 @@ export async function streamNvidiaResponse(
       top_p: 0.9,
       stream: true,
     }),
+    signal: AbortSignal.timeout(120_000), // 2-min timeout for streams
   });
 
   if (!response.ok) {
