@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 ![DisputeCompass Banner](public/banner.jpg)
 
@@ -111,6 +111,22 @@ Open [http://localhost:3000](http://localhost:3000) 🎉
 npm run build
 npm start
 ```
+
+---
+
+## 🧪 Testing with Sample PDFs
+
+Three sample PDF files are included in the **root of the repository** so you can test every feature immediately — no documents needed!
+
+| Sample File | Recommended Feature | How to Use |
+|:---|:---|:---|
+| `Legal_Notice_1.pdf` | 🔍 **Analyze** | Upload to the **Clause & Risk Analyzer** to see color-coded risk scoring and plain-English clause breakdowns |
+| `Legal_Notice_1.pdf` + `Legal_Notice_2.pdf` | ⚖️ **Compare** | Upload both files to the **Document Comparator** — one as Document A and one as Document B — to see a side-by-side diff of favorable vs adverse changes |
+| `Legal_Notice_Landlord_Dispute_Sample.pdf` | 🗺️ **Roadmap** | Upload to the **Action Roadmap** module to generate a step-by-step dispute action plan with evidence checklists and deadlines |
+| Any of the above | 💬 **Ask a Doc** | Upload any document to the **Document Q&A Copilot** and ask plain-English questions to get cited answers |
+
+> [!NOTE]
+> The AI (NVIDIA NIM · Llama 3.3 70B) may take a **few minutes** to process documents. If you see an error, **reload the page and try again** — this is typically a transient API timeout.
 
 ---
 
