@@ -106,6 +106,31 @@ describe("/api/analyze route", () => {
     const res = await GET();
     expect(res.status).toBe(405);
   });
+
+  it("sets Cache-Control: no-store on 200 response", async () => {
+    const { POST } = await import("@/app/api/analyze/route");
+    const req = makeRequest(VALID_ANALYZE_BODY);
+    const res = await POST(req as never);
+    expect(res.headers.get("Cache-Control")).toContain("no-store");
+  });
+
+  it("sets X-Request-ID on every response", async () => {
+    const { POST } = await import("@/app/api/analyze/route");
+    const req = makeRequest(VALID_ANALYZE_BODY);
+    const res = await POST(req as never);
+    expect(res.headers.get("X-Request-ID")).toBeTruthy();
+  });
+
+  it("returns 413 when content-length exceeds 256 KB", async () => {
+    const { POST } = await import("@/app/api/analyze/route");
+    const req = new Request("http://localhost/api/analyze", {
+      method: "POST",
+      headers: { "content-type": "application/json", "content-length": "300000" },
+      body: JSON.stringify(VALID_ANALYZE_BODY),
+    });
+    const res = await POST(req as never);
+    expect(res.status).toBe(413);
+  });
 });
 
 // ── /api/compare route ────────────────────────────────────────────────────────

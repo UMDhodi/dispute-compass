@@ -1,41 +1,39 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { callNvidia } from "@/lib/nvidia";
 import { QA_SYSTEM_PROMPT } from "@/lib/prompts";
 import { sanitizeText, sanitizeQuestion, safeParseJSON } from "@/lib/sanitize";
 import { prisma } from "@/lib/prisma";
 import { qaLimiter, getClientIp } from "@/lib/rate-limit";
+import { secureJson, safeErrorMessage, checkBodySize } from "@/lib/api-middleware";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+  return secureJson({ error: "Method not allowed" }, { status: 405 });
 }
 
 export async function POST(request: NextRequest) {
-  // ── Rate limit ──────────────────────────────────────────────────────────
   const ip = getClientIp(request);
   const rl = qaLimiter.check(ip);
   if (!rl.allowed) {
-    return NextResponse.json(
+    return secureJson(
       { error: "Too many requests. Please wait before trying again." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) },
-      }
+      { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
     );
   }
+
+  const sizeError = checkBodySize(request);
+  if (sizeError) return sizeError;
 
   try {
     const contentType = request.headers.get("content-type") ?? "";
     if (!contentType.includes("application/json")) {
-      return NextResponse.json({ error: "Content-Type must be application/json" }, { status: 415 });
+      return secureJson({ error: "Content-Type must be application/json" }, { status: 415 });
     }
 
     const body = await request.json() as {
-      question?: unknown;
-      documentText?: unknown;
-      sessionId?: unknown;
+      question?: unknown; documentText?: unknown; sessionId?: unknown;
     };
 
     let question: string;
@@ -43,21 +41,18 @@ export async function POST(request: NextRequest) {
       question = sanitizeQuestion(body.question);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Invalid question";
-      return NextResponse.json({ error: msg }, { status: 400 });
+      return secureJson({ error: msg }, { status: 400 });
     }
 
     let documentText: string;
     try {
       documentText = sanitizeText(body.documentText, 40_000);
     } catch {
-      return NextResponse.json({ error: "Document text must be a string" }, { status: 400 });
+      return secureJson({ error: "Document text must be a string" }, { status: 400 });
     }
 
     if (documentText.length < 50) {
-      return NextResponse.json(
-        { error: "Please provide a document to ask questions about" },
-        { status: 400 }
-      );
+      return secureJson({ error: "Please provide a document to ask questions about" }, { status: 400 });
     }
 
     const sessionId =
@@ -77,8 +72,7 @@ export async function POST(request: NextRequest) {
 
     const result = safeParseJSON(jsonStr.trim());
     if (!result) {
-      // Return as plain text if JSON parse fails
-      return NextResponse.json({
+      return secureJson({
         result: {
           answer: rawResponse,
           relevantClauses: [],
@@ -106,10 +100,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ result });
+    return secureJson({ result });
   } catch (err) {
     console.error("[/api/qa] Error:", err);
-    const message = err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return secureJson({ error: safeErrorMessage(err) }, { status: 500 });
   }
 }
